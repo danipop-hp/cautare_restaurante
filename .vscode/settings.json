@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^git remote set-url origin https://github\\.com/danipop-hp/cautare_restaurante\\.git\ngit push -u origin main$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
