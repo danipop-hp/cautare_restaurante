@@ -228,8 +228,9 @@
   }
 
   .hero-content {
-    max-width: 720px;
+    max-width: 600x;
     padding: 0 24px;
+    text-align: center;
   }
 
   .btn {
