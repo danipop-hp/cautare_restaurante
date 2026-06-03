@@ -3,14 +3,14 @@ setlocal
 cd /d "%~dp0"
 
 call :kill_port 8000 "Backend"
-call :kill_port 5500 "Frontend"
+call :kill_port 5173 "Frontend"
 
 echo Starting backend and frontend in separate windows...
 start "Urban Plate Backend" cmd /k "backend\run_backend.bat"
 start "Urban Plate Frontend" cmd /k "frontend\start_frontend.bat"
 
 echo.
-echo Open in browser: http://127.0.0.1:5500
+echo Open in browser: http://127.0.0.1:5173
 goto :eof
 
 :kill_port

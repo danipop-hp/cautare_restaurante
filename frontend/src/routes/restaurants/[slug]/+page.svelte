@@ -1,10 +1,15 @@
 <script>
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { isAuthenticated, logout } from '$lib/auth';
+  import { isAdminAuthenticated } from '$lib/adminAuth';
 
   let restaurant = $state(null);
   let isLoading = $state(false);
   let error = $state('');
+  let isAuthed = $state(false);
+  let isAdminAuthed = $state(false);
 
   const apiBaseUrl = () =>
     typeof window !== 'undefined' && window.API_BASE_URL
@@ -45,8 +50,20 @@
     }
   }
 
+  function refreshAuthState() {
+    isAuthed = isAuthenticated();
+    isAdminAuthed = isAdminAuthenticated();
+  }
+
+  function handleLogout() {
+    logout();
+    isAuthed = false;
+    goto('/login');
+  }
+
   onMount(() => {
     incarcaRestaurant();
+    refreshAuthState();
   });
 </script>
 
@@ -55,7 +72,19 @@
   <ul class="nav-links">
     <li><a href="/#home">Acasa</a></li>
     <li><a href="/#menu">Cautare</a></li>
-    <li class="nav-break"><a href="/#contact">Contact</a></li>
+    <li><a href="/#contact">Contact</a></li>
+    {#if isAuthed}
+      <li><button class="link-btn" type="button" onclick={handleLogout}>Logout</button></li>
+      {#if isAdminAuthed}
+        <li><a href="/admin">Admin</a></li>
+      {/if}
+    {:else}
+      <li><a href="/login">Login</a></li>
+      <li><a href="/register">Register</a></li>
+      {#if isAdminAuthed}
+        <li><a href="/admin">Admin</a></li>
+      {/if}
+    {/if}
   </ul>
 </nav>
 
@@ -72,9 +101,11 @@
       : buildMapsLink(restaurant.nume, restaurant.locatie)}
     <section class="detalii-card">
       <h1>{restaurant.nume}</h1>
+      <div class="detalii-tags">
+        <span>Specific: {restaurant.specific}</span>
+        <span>Locatie: {restaurant.locatie}</span>
+      </div>
       <img class="detalii-imagine" src={restaurant.imagine} alt={restaurant.nume} />
-      <p><strong>Specific:</strong> {restaurant.specific}</p>
-      <p><strong>Locatie:</strong> {restaurant.locatie}</p>
       <a class="btn detalii-btn site-btn" href={linkOficial} target="_blank" rel="noopener noreferrer">
         Pagina oficiala
       </a>
@@ -100,26 +131,58 @@
 </footer>
 
 <style>
+  :global(:root) {
+    --bg: #0f1117;
+    --ink: #f8f3eb;
+    --muted: #c0b7a9;
+    --accent: #ff6b3d;
+    --accent-2: #4cc9b0;
+    --accent-3: #f4d06f;
+    --surface: #1b1e26;
+    --surface-2: #141720;
+    --border: rgba(248, 243, 235, 0.12);
+    --shadow: 0 24px 60px rgba(8, 10, 15, 0.55);
+  }
+
+  :global(body) {
+    margin: 0;
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    line-height: 1.6;
+    color: var(--ink);
+    scroll-behavior: smooth;
+    background: radial-gradient(circle at 12% 15%, rgba(76, 201, 176, 0.35) 0, transparent 45%),
+      radial-gradient(circle at 85% 12%, rgba(255, 107, 61, 0.28) 0, transparent 45%),
+      radial-gradient(circle at 50% 80%, rgba(244, 208, 111, 0.2) 0, transparent 55%),
+      linear-gradient(180deg, #0f1117 0%, #121522 100%);
+  }
+
+  :global(a) {
+    color: inherit;
+  }
+
   .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.6rem 2%;
-    background: #fff;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 0.7rem 3%;
+    background: rgba(15, 17, 23, 0.78);
+    backdrop-filter: blur(12px);
     position: fixed;
     width: 100%;
+    box-sizing: border-box;
     top: 0;
     z-index: 1000;
+    border-bottom: 1px solid rgba(248, 243, 235, 0.08);
   }
 
   .logo {
-    font-size: 1.2rem;
-    font-weight: 600;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
 
   .logo span {
-    color: #e67e22;
+    color: var(--accent);
   }
 
   .nav-links {
@@ -132,19 +195,56 @@
     justify-content: flex-end;
   }
 
-  .nav-links .nav-break {
-    flex-basis: 100%;
-    display: flex;
-    justify-content: flex-end;
-  }
-
   .nav-links a {
     text-decoration: none;
-    color: #333;
-    transition: color 0.3s;
-    font-size: 0.85rem;
+    color: var(--ink);
+    transition: color 0.25s ease;
+    font-size: 0.9rem;
     white-space: nowrap;
     padding: 2px 4px;
+    position: relative;
+  }
+
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    height: 2px;
+    width: 100%;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.25s ease;
+  }
+
+  .link-btn {
+    border: none;
+    background: transparent;
+    font: inherit;
+    color: var(--ink);
+    cursor: pointer;
+    padding: 2px 4px;
+    position: relative;
+    font-size: 0.9rem;
+    line-height: 1.1;
+  }
+
+  .link-btn::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    height: 2px;
+    width: 100%;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.25s ease;
+  }
+
+  .link-btn:hover::after {
+    transform: scaleX(1);
   }
 
   @media (max-width: 520px) {
@@ -160,34 +260,55 @@
   }
 
   .nav-links a:hover {
-    color: #e67e22;
+    color: var(--accent);
+  }
+
+  .nav-links a:hover::after {
+    transform: scaleX(1);
   }
 
   .detalii-main {
     min-height: 100vh;
-    padding: 120px 10% 60px;
-    background: #fafafa;
+    padding: 120px 8% 80px;
   }
 
   .detalii-card {
     max-width: 720px;
     margin: 24px auto 0;
-    background: #fff;
-    border: 1px solid #eee;
-    border-radius: 12px;
-    padding: 28px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    background: var(--surface);
+    border: 1px solid rgba(28, 27, 26, 0.08);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: var(--shadow);
+    animation: heroFade 0.8s ease forwards;
   }
 
   .detalii-card h1 {
-    margin-bottom: 18px;
+    margin-bottom: 10px;
+    font-family: "Fraunces", serif;
+    font-size: clamp(2rem, 3.2vw, 2.6rem);
+  }
+
+  .detalii-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .detalii-tags span {
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 0.85rem;
   }
 
   .detalii-imagine {
     width: 100%;
     height: 260px;
     object-fit: cover;
-    border-radius: 10px;
+    border-radius: 16px;
     margin-bottom: 18px;
   }
 
@@ -200,13 +321,13 @@
     display: flex;
     justify-content: space-between;
     padding: 10px 0;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid rgba(28, 27, 26, 0.08);
   }
 
   .mesaj-gol {
     margin-top: 24px;
     font-weight: 600;
-    color: #666;
+    color: var(--muted);
   }
 
   .mesaj-eroare {
@@ -215,16 +336,19 @@
 
   .btn {
     display: inline-block;
-    background: #e67e22;
-    color: #fff;
-    padding: 10px 16px;
-    border-radius: 5px;
+    background: linear-gradient(135deg, var(--accent), #ffb347);
+    color: #1b1b1b;
+    padding: 10px 18px;
+    border-radius: 999px;
     text-decoration: none;
+    font-weight: 600;
+    box-shadow: 0 12px 28px rgba(255, 122, 61, 0.3);
   }
 
   .site-btn {
-    background: #333;
+    background: #1f1d1b;
     margin-top: 12px;
+    color: #fff;
   }
 
   .site-btn:hover {
@@ -232,9 +356,20 @@
   }
 
   footer {
-    background: #333;
-    color: #fff;
+    background: #141210;
+    color: #f3efe9;
     text-align: center;
-    padding: 20px;
+    padding: 24px 16px;
+  }
+
+  @keyframes heroFade {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 </style>

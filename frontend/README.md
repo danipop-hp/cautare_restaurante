@@ -1,42 +1,24 @@
-# sv
+# Urban Plate Frontend (SvelteKit)
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Frontend-ul consuma API-ul FastAPI de pe `http://127.0.0.1:8000/api`.
 
-## Creating a project
-
-If you're seeing this, you've probably already done this step. Congrats!
+## Instalare
 
 ```sh
-# create a new project
-npx sv create my-app
+npm install
 ```
 
-To recreate this project with the same configuration:
+## Rulare local (dev)
 
 ```sh
-# recreate this project
-npx sv@0.15.3 create --template minimal --no-types --install npm frontend
+npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-## Developing
+Deschide: http://127.0.0.1:5173
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
+## Build
 
 ```sh
 npm run build
+npm run preview -- --host 127.0.0.1 --port 5173
 ```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.

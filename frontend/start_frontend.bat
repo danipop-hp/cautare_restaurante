@@ -2,25 +2,11 @@
 setlocal
 cd /d "%~dp0"
 
-set "PORT=5500"
+set "PORT=5173"
 if not "%~1"=="" set "PORT=%~1"
 
-set "PYTHON_CMD="
-if exist "..\.venv\Scripts\python.exe" (
-  set "PYTHON_CMD=..\.venv\Scripts\python.exe"
-) else (
-  py -3 --version >nul 2>&1
-  if not errorlevel 1 (
-    set "PYTHON_CMD=py -3"
-  ) else (
-    python --version >nul 2>&1
-    if not errorlevel 1 (
-      set "PYTHON_CMD=python"
-    )
-  )
-)
-
-if "%PYTHON_CMD%"=="" goto :no_python
+where npm >nul 2>&1
+if errorlevel 1 goto :no_npm
 
 for /f "tokens=5" %%P in ('netstat -ano ^| findstr /R /C:":%PORT% .*LISTENING"') do (
   echo.
@@ -30,14 +16,14 @@ for /f "tokens=5" %%P in ('netstat -ano ^| findstr /R /C:":%PORT% .*LISTENING"')
   goto :eof
 )
 
-echo Starting static server on http://127.0.0.1:%PORT%
-%PYTHON_CMD% -m http.server %PORT% || goto :error
+echo Starting SvelteKit dev server on http://0.0.0.0:%PORT%
+npm run dev -- --host 0.0.0.0 --port %PORT% || goto :error
 goto :eof
 
-:no_python
+:no_npm
 echo.
-echo Python interpreter was not found.
-echo Install Python 3.10+ and ensure either "py" or "python" is in PATH.
+echo npm was not found.
+echo Install Node.js LTS and ensure "npm" is in PATH.
 pause
 exit /b 1
 

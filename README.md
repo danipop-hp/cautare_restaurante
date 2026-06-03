@@ -1,6 +1,6 @@
 # Urban Plate Baia Mare
 
-Proiectul include un backend REST API cu FastAPI + SQLite si un frontend static conectat la API.
+Proiectul include un backend REST API cu FastAPI + SQLite si un frontend SvelteKit conectat la API.
 
 ## Structura proiectului (stare curenta)
 
@@ -9,8 +9,8 @@ Proiectul include un backend REST API cu FastAPI + SQLite si un frontend static 
 - `backend/database.py` - conexiunea la SQLite
 - `backend/seed_data.py` - genereaza dataset-ul si populeaza baza de date la startup
 - `backend/restaurante.db` - baza SQLite locala
-- `frontend/index.html` + `frontend/script.js` - pagina principala + cautare dupa buget
-- `frontend/restaurant.html` + `frontend/detalii.js` - pagina de detalii restaurant
+- `frontend/src/routes/+page.svelte` - pagina principala + cautare dupa buget
+- `frontend/src/routes/restaurants/[slug]/+page.svelte` - pagina de detalii restaurant
 - `start_app.bat` - porneste backend + frontend in 2 ferestre
 
 Observatie: seed-ul folosit in prezent este generat din `backend/seed_data.py`.
@@ -19,6 +19,9 @@ Observatie: seed-ul folosit in prezent este generat din `backend/seed_data.py`.
 
 ```bash
 pip install -r requirements.txt
+
+cd frontend
+npm install
 ```
 
 ## 2. Rulare rapida (recomandat)
@@ -31,12 +34,12 @@ start_app.bat
 
 Se deschid doua ferestre CMD:
 - backend pe `http://127.0.0.1:8000`
-- frontend pe `http://127.0.0.1:5500`
+- frontend pe `http://127.0.0.1:5173`
 
 Deschide in browser:
 
 ```text
-http://127.0.0.1:5500
+http://127.0.0.1:5173
 ```
 
 ## 3. Rulare manuala
@@ -66,10 +69,10 @@ PowerShell:
 
 - cautare restaurante dupa buget (`GET /api/restaurants?max_budget=`)
 - afisare rezultate in homepage doar dupa apasarea butonului `Cauta`
-- pagina de detalii restaurant (`restaurant.html?id={slug}`)
+- pagina de detalii restaurant (`/restaurants/{slug}`)
 - afisare meniu restaurant (`GET /api/restaurants/{slug}`)
 
-In plus, frontend-ul are fallback local din `frontend/restaurante-data.js` daca backend-ul nu raspunde.
+Frontend-ul foloseste SvelteKit si consuma API-ul FastAPI in timp real.
 
 ## 6. Troubleshooting (Windows)
 

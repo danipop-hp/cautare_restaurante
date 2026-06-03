@@ -5,7 +5,8 @@ from urllib.parse import quote_plus
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from .models import MenuItem, Restaurant
+from .auth_utils import generate_salt, hash_password
+from .models import MenuItem, Restaurant, User
 
 IMAGES = {
     "restaurant": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=80",
@@ -292,6 +293,13 @@ def build_restaurants_seed() -> list[dict[str, str | int | list[dict[str, str | 
 
 RESTAURANTS_SEED = build_restaurants_seed()
 
+ADMIN_SEED = {
+    "name": "Daniel",
+    "email": "admin@urbanplate.ro",
+    "password": "Admin123!",
+    "role": "admin",
+}
+
 
 def build_slug(name: str) -> str:
     normalized = unicodedata.normalize("NFD", name)
@@ -304,9 +312,7 @@ def build_slug(name: str) -> str:
 def seed_database(db: Session) -> None:
     existing_count = db.scalar(select(func.count(Restaurant.id)))
     if existing_count and existing_count > 0:
-        db.query(MenuItem).delete()
-        db.query(Restaurant).delete()
-        db.commit()
+        return
 
     for restaurant_data in RESTAURANTS_SEED:
         restaurant = Restaurant(
@@ -329,4 +335,22 @@ def seed_database(db: Session) -> None:
 
         db.add(restaurant)
 
+    db.commit()
+
+
+def ensure_admin_user(db: Session) -> None:
+    existing = db.scalar(select(User).where(User.email == ADMIN_SEED["email"]))
+    if existing is not None:
+        return
+
+    salt = generate_salt()
+    password_hash = hash_password(ADMIN_SEED["password"], salt)
+    admin_user = User(
+        name=ADMIN_SEED["name"],
+        email=ADMIN_SEED["email"],
+        password_salt=salt,
+        password_hash=password_hash,
+        role=ADMIN_SEED["role"],
+    )
+    db.add(admin_user)
     db.commit()
