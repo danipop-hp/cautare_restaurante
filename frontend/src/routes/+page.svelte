@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import { isAuthenticated, logout } from '$lib/auth';
   import { isAdminAuthenticated } from '$lib/adminAuth';
+  import { getApiBaseUrl } from '$lib/api';
 
   let dateRestaurante = $state([]);
   let isLoading = $state(false);
@@ -16,10 +17,7 @@
   let specific = $state('');
   let cautare = $state('');
 
-  const apiBaseUrl = () =>
-    typeof window !== 'undefined' && window.API_BASE_URL
-      ? window.API_BASE_URL
-      : 'http://127.0.0.1:8000/api';
+  const apiBaseUrl = () => getApiBaseUrl();
 
   function buildMapsLink(numeRestaurant, locatieRestaurant) {
     const interogare = encodeURIComponent(`${numeRestaurant} ${locatieRestaurant}`);

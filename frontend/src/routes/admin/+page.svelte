@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { clearAdminSession, getAdminToken, isAdminAuthenticated } from '$lib/adminAuth';
+  import { getApiBaseUrl } from '$lib/api';
 
   let restaurants = $state([]);
   let selectedRestaurant = $state(null);
@@ -25,10 +26,7 @@
     imagine: ''
   });
 
-  const apiBaseUrl = () =>
-    typeof window !== 'undefined' && window.API_BASE_URL
-      ? window.API_BASE_URL
-      : 'http://127.0.0.1:8000/api';
+  const apiBaseUrl = () => getApiBaseUrl();
 
 
   function authHeader() {

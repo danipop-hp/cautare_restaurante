@@ -4,6 +4,7 @@
   import { page } from '$app/stores';
   import { isAuthenticated, logout } from '$lib/auth';
   import { isAdminAuthenticated } from '$lib/adminAuth';
+  import { getApiBaseUrl } from '$lib/api';
 
   let restaurant = $state(null);
   let isLoading = $state(false);
@@ -11,10 +12,7 @@
   let isAuthed = $state(false);
   let isAdminAuthed = $state(false);
 
-  const apiBaseUrl = () =>
-    typeof window !== 'undefined' && window.API_BASE_URL
-      ? window.API_BASE_URL
-      : 'http://127.0.0.1:8000/api';
+  const apiBaseUrl = () => getApiBaseUrl();
 
   function buildMapsLink(numeRestaurant, locatieRestaurant) {
     const interogare = encodeURIComponent(`${numeRestaurant} ${locatieRestaurant}`);

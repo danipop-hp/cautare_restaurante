@@ -81,7 +81,8 @@
   }
 
   :global(html) {
-    height: 100%;
+    min-height: 100%;
+    min-height: 100dvh;
     background-color: #0f1117;
   }
 
@@ -98,11 +99,13 @@
     background-position: center center;
     background-repeat: no-repeat;
     background-size: cover;
+    background-attachment: fixed;
     color: var(--ink);
   }
 
   .auth-main {
     min-height: 100vh;
+    min-height: 100dvh;
     display: grid;
     place-items: center;
     padding: 1.75rem 1rem;
@@ -111,7 +114,7 @@
   }
 
   .auth-card {
-    width: min(440px, 92vw);
+    width: min(440px, calc(100vw - 1.5rem));
     background: var(--surface);
     border-radius: 24px;
     padding: 2.5rem;
@@ -132,6 +135,7 @@
 
   .auth-header h1 {
     margin: 0.4rem 0 0.6rem;
+    line-height: 1.1;
   }
 
   .auth-subtitle {
@@ -178,8 +182,10 @@
   }
 
   .auth-footer {
-    margin-top: 1.6rem;
+    margin-top: 1rem;
     color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
   }
 
   .auth-footer a {
@@ -190,30 +196,50 @@
 
   @media (max-width: 480px) {
     .auth-main {
-      padding: 1.25rem 0.75rem;
+      padding: 0.4rem 0.35rem;
     }
 
     .auth-card {
-      width: 100%;
-      padding: 1.5rem 1.25rem;
+      width: min(320px, calc(100vw - 0.7rem));
+      padding: 0.85rem 0.75rem;
       border-radius: 18px;
     }
 
+    .auth-brand {
+      font-size: 1.05rem;
+    }
+
     .auth-header h1 {
-      font-size: 1.4rem;
+      font-size: 1.15rem;
     }
 
     .auth-subtitle {
-      font-size: 0.95rem;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      margin-bottom: 1rem;
+    }
+
+    .auth-form {
+      gap: 0.7rem;
+    }
+
+    label {
+      font-size: 0.88rem;
     }
 
     input {
-      font-size: 0.95rem;
-      padding: 0.7rem 0.85rem;
+      font-size: 15px;
+      padding: 0.65rem 0.7rem;
     }
 
     .btn {
       width: 100%;
+      padding: 0.75rem 1rem;
+    }
+
+    .auth-footer {
+      font-size: 0.84rem;
+      margin-top: 0.8rem;
     }
   }
 </style>

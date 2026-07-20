@@ -2,16 +2,14 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { isAdminAuthenticated, storeAdminSession } from '$lib/adminAuth';
+  import { getApiBaseUrl } from '$lib/api';
 
   let email = $state('');
   let password = $state('');
   let error = $state('');
   let isLoading = $state(false);
 
-  const apiBaseUrl = () =>
-    typeof window !== 'undefined' && window.API_BASE_URL
-      ? window.API_BASE_URL
-      : 'http://127.0.0.1:8000/api';
+  const apiBaseUrl = () => getApiBaseUrl();
 
   onMount(() => {
     if (isAdminAuthenticated()) {

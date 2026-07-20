@@ -27,8 +27,8 @@ try {
     Write-Output "Installing dependencies..."
     & $venvPython -m pip install -r requirements.txt
 
-    Write-Output "Starting uvicorn (FastAPI) on http://127.0.0.1:8000"
-    & $venvPython -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+    Write-Output "Starting uvicorn (FastAPI) on http://0.0.0.0:8000"
+    & $venvPython -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 }
 finally {
     Pop-Location
