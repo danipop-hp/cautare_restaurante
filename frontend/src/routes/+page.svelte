@@ -160,9 +160,13 @@
   {:else}
     <div class="menu-container">
       {#each dateRestaurante as r, i}
-        {@const linkRestaurant = r.linkOficial && r.linkOficial.trim() !== ''
-          ? r.linkOficial
-          : buildMapsLink(r.nume, r.locatie)}
+        {@const linkRestaurant = (r.linkOficial && r.linkOficial.trim() !== '') 
+  ? r.linkOficial 
+  : (r.website_url && r.website_url.trim() !== '') 
+    ? r.website_url 
+    : (r.website && r.website.trim() !== '') 
+      ? r.website 
+      : buildMapsLink(r.nume || r.name, r.locatie || 'Baia Mare')}
         <article class="menu-item" style={`--delay: ${i * 60}ms`}>
           <img class="restaurant-img" src={r.imagine} alt={r.nume} />
           <div class="item-info">

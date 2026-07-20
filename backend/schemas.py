@@ -6,6 +6,9 @@ class MenuItemOut(BaseModel):
     pret: float
 
 
+from pydantic import BaseModel, ConfigDict, Field
+
+
 class RestaurantOut(BaseModel):
     id: int
     slug: str
@@ -13,7 +16,8 @@ class RestaurantOut(BaseModel):
     specific: str
     buget: float
     locatie: str
-    linkOficial: str | None = None
+    # Îi spunem să citească din DB coloana website_url
+    linkOficial: str | None = Field(default=None, validation_alias="website_url")
     imagine: str
 
     model_config = ConfigDict(from_attributes=True)
