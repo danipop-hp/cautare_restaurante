@@ -1,3 +1,10 @@
+Am înțeles greșit ce ai vrut să spui la început. Scuze pentru încurcătură!
+
+Am repus verificarea `if (!isAuthenticated())` exact așa cum era în codul tău inițial. Acum, dacă utilizatorul nu este logat și apasă pe **Caută** sau pe oricare dintre filtrele rapide, va fi redirecționat direct la pagina de **`/login`**.
+
+Iată fișierul complet, păstrând absolut tot din codul și designul tău inițial, plus doar butoanele de filtre rapide:
+
+```svelte
 <script>
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
@@ -33,6 +40,15 @@
     logout();
     isAuthed = false;
     goto('/login');
+  }
+
+  function seteazaFiltruRapid(valoare) {
+    if (cautare === valoare) {
+      cautare = '';
+    } else {
+      cautare = valoare;
+    }
+    incarcaRestaurante();
   }
 
   onMount(() => {
@@ -151,6 +167,58 @@
     />
     <input id="cautare" type="text" bind:value={cautare} placeholder="Cautare (nume, locatie)" />
     <button class="filter-btn" onclick={incarcaRestaurante}>Cauta</button>
+
+    <div class="preparate-rapide">
+      <button 
+        type="button" 
+        class="tag-btn {cautare === 'burger' ? 'activ' : ''}" 
+        onclick={() => seteazaFiltruRapid('burger')}
+      >
+        🍔 Burger
+      </button>
+
+      <button 
+        type="button" 
+        class="tag-btn {cautare === 'pizza' ? 'activ' : ''}" 
+        onclick={() => seteazaFiltruRapid('pizza')}
+      >
+        🍕 Pizza
+      </button>
+
+      <button 
+        type="button" 
+        class="tag-btn {cautare === 'shaorma' ? 'activ' : ''}" 
+        onclick={() => seteazaFiltruRapid('shaorma')}
+      >
+        🥙 Shaorma
+      </button>
+
+      <button 
+        type="button" 
+        class="tag-btn {cautare === 'paste' ? 'activ' : ''}" 
+        onclick={() => seteazaFiltruRapid('paste')}
+      >
+        🍝 Paste
+      </button>
+
+      <button 
+        type="button" 
+        class="tag-btn {cautare === 'cafea' ? 'activ' : ''}" 
+        onclick={() => seteazaFiltruRapid('cafea')}
+      >
+        ☕ Cafea / Brunch
+      </button>
+
+      {#if cautare || specific || bugetMaxim}
+        <button 
+          type="button" 
+          class="reset-btn" 
+          onclick={() => { cautare = ''; specific = ''; bugetMaxim = ''; dateRestaurante = []; statusMessage = 'Filtrele au fost resetate.'; }}
+        >
+          ✖ Reseteaza
+        </button>
+      {/if}
+    </div>
   </div>
 
   {#if isLoading}
@@ -161,12 +229,12 @@
     <div class="menu-container">
       {#each dateRestaurante as r, i}
         {@const linkRestaurant = (r.linkOficial && r.linkOficial.trim() !== '') 
-  ? r.linkOficial 
-  : (r.website_url && r.website_url.trim() !== '') 
-    ? r.website_url 
-    : (r.website && r.website.trim() !== '') 
-      ? r.website 
-      : buildMapsLink(r.nume || r.name, r.locatie || 'Baia Mare')}
+          ? r.linkOficial 
+          : (r.website_url && r.website_url.trim() !== '') 
+            ? r.website_url 
+            : (r.website && r.website.trim() !== '') 
+              ? r.website 
+              : buildMapsLink(r.nume || r.name, r.locatie || 'Baia Mare')}
         <article class="menu-item" style={`--delay: ${i * 60}ms`}>
           <img class="restaurant-img" src={r.imagine} alt={r.nume} />
           <div class="item-info">
@@ -191,7 +259,7 @@
 </section>
 
 <footer id="contact">
-  <p>&copy; 2026 Urban Plate Baia Mare. Descopera localuri bune, in bugetul tau.</p>
+  <p>© 2026 Urban Plate Baia Mare. Descopera localuri bune, in bugetul tau.</p>
 </footer>
 
 <style>
@@ -463,6 +531,51 @@
     transform: translateY(-1px);
   }
 
+  .preparate-rapide {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(28, 27, 26, 0.1);
+  }
+
+  .tag-btn {
+    background: #fff;
+    border: 1px solid rgba(28, 27, 26, 0.12);
+    color: #1f1d1b;
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.88rem;
+    transition: all 0.25s ease;
+  }
+
+  .tag-btn:hover {
+    background: rgba(255, 107, 61, 0.1);
+    border-color: var(--accent);
+  }
+
+  .tag-btn.activ {
+    background: var(--accent-2);
+    color: #fff;
+    border-color: var(--accent-2);
+    font-weight: 600;
+  }
+
+  .reset-btn {
+    background: transparent;
+    border: none;
+    color: #b91c1c;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
   .menu-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -574,3 +687,5 @@
     }
   }
 </style>
+
+```
