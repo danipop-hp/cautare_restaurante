@@ -15,6 +15,7 @@ class RestaurantOut(BaseModel):
     website_url: str | None
     menu_url: str | None
     status: str
+    community_votes: int
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -94,3 +95,42 @@ class NotificationOut(BaseModel):
     message: str
     is_read: bool
     created_at: datetime
+
+
+class PersonalNoteIn(BaseModel):
+    note: str = Field(max_length=2000)
+
+
+class PersonalNoteOut(BaseModel):
+    id: int
+    restaurant_id: int
+    note: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class BudgetAlertIn(BaseModel):
+    specific: str = Field(default="", max_length=120)
+    max_budget: float = Field(gt=0)
+
+
+class BudgetAlertOut(BudgetAlertIn):
+    id: int
+    is_active: bool
+    created_at: datetime
+
+
+class CollectionIn(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+
+
+class CollectionOut(BaseModel):
+    id: int
+    name: str
+    restaurants: list[RestaurantOut]
+    created_at: datetime
+
+
+class VoteOut(BaseModel):
+    community_votes: int
+    voted: bool

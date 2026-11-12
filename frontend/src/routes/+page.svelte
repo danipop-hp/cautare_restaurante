@@ -302,6 +302,7 @@
           <p>Specific: {r.specific}</p>
           <p>Locatie: {r.locatie || r.address || 'Baia Mare'}</p>
           <span class="price">Buget mediu: {r.buget || r.buget_mediu} RON</span>
+          <span class="price">👍 Merita banii: {r.community_votes || 0}</span>
           <div class="item-actions">
             <a class="btn site-btn detalii-btn" href={`/restaurants/${r.slug}`}>Detalii</a>
             {#if r.website_url || r.menu_url}

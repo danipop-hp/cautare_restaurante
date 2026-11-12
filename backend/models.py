@@ -20,6 +20,7 @@ class Restaurant(Base):
     official_link: Mapped[str | None] = mapped_column(String(400), nullable=True)
     menu_url: Mapped[str | None] = mapped_column(String(400), nullable=True)
     status: Mapped[str] = mapped_column(String(30), default="active", index=True)
+    community_votes: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class User(Base):
@@ -84,3 +85,55 @@ class Notification(Base):
     message: Mapped[str] = mapped_column(Text)
     is_read: Mapped[bool] = mapped_column(default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
+class PersonalNote(Base):
+    __tablename__ = "personal_notes"
+    __table_args__ = (UniqueConstraint("user_id", "restaurant_id", name="uq_user_restaurant_note"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    restaurant_id: Mapped[int] = mapped_column(ForeignKey("restaurants.id", ondelete="CASCADE"), index=True)
+    note: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class BudgetAlert(Base):
+    __tablename__ = "budget_alerts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    specific: Mapped[str] = mapped_column(String(120), default="")
+    max_budget: Mapped[float] = mapped_column(Float)
+    is_active: Mapped[bool] = mapped_column(default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class Collection(Base):
+    __tablename__ = "collections"
+    __table_args__ = (UniqueConstraint("user_id", "name", name="uq_user_collection_name"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class CollectionRestaurant(Base):
+    __tablename__ = "collection_restaurants"
+    __table_args__ = (UniqueConstraint("collection_id", "restaurant_id", name="uq_collection_restaurant"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    collection_id: Mapped[int] = mapped_column(ForeignKey("collections.id", ondelete="CASCADE"), index=True)
+    restaurant_id: Mapped[int] = mapped_column(ForeignKey("restaurants.id", ondelete="CASCADE"), index=True)
+
+
+class RestaurantVote(Base):
+    __tablename__ = "restaurant_votes"
+    __table_args__ = (UniqueConstraint("user_id", "restaurant_id", name="uq_user_restaurant_vote"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    restaurant_id: Mapped[int] = mapped_column(ForeignKey("restaurants.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
