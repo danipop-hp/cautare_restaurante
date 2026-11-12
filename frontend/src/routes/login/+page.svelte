@@ -13,7 +13,7 @@
     }
   });
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     error = '';
 
@@ -22,7 +22,7 @@
       return;
     }
 
-    const result = login({ email, password });
+    const result = await login({ email, password });
     if (!result.ok) {
       error = result.message ?? 'Nu am putut face login.';
       return;

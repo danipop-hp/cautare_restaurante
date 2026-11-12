@@ -71,8 +71,28 @@ PowerShell:
 - afisare rezultate in homepage doar dupa apasarea butonului `Cauta`
 - pagina de detalii restaurant (`/restaurants/{slug}`)
 - afisare meniu restaurant (`GET /api/restaurants/{slug}`)
+- autentificare client in backend (`/api/auth/register`, `/api/auth/login`)
+- profil cu preferinte culinare, alergii, buget si notificari
+- dashboard client (`/account`)
+- restaurante favorite si liste personalizate
+- istoric restaurante vizitate si preparate selectate
+- recenzii cu rating de la 1 la 5
+- solicitari simulate de rezervare
+- roluri separate pentru client si administrator
 
 Frontend-ul foloseste SvelteKit si consuma API-ul FastAPI in timp real.
+
+## 6. API pentru contul clientului
+
+- `GET/PUT /api/me` - profil si preferinte
+- `GET /api/me/favorites` - lista de favorite
+- `POST/DELETE /api/restaurants/{id}/favorite` - adaugare/eliminare favorite
+- `POST /api/restaurants/{id}/visit` - memorare vizita
+- `GET /api/me/history` - istoricul vizitelor si preparatelor
+- `POST /api/me/menu-history` - memorare preparat selectat
+- `GET/POST /api/restaurants/{id}/reviews` - recenzii
+- `GET /api/me/reservations` - rezervari proprii
+- `POST /api/restaurants/{id}/reservations` - rezervare simulata
 
 ## 6. Troubleshooting (Windows)
 

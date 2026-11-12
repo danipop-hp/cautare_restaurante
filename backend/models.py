@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .database import Base
+
 
 class Restaurant(Base):
     __tablename__ = "restaurants"
@@ -14,24 +15,11 @@ class Restaurant(Base):
     specific: Mapped[str] = mapped_column(String(120), index=True)
     avg_budget: Mapped[float] = mapped_column(Float, index=True)
     location: Mapped[str] = mapped_column(String(200), index=True)
-    official_link: Mapped[str | None] = mapped_column(String(300), nullable=True)
     image: Mapped[str] = mapped_column(String(400))
-
-    menu_items: Mapped[list["MenuItem"]] = relationship(
-        back_populates="restaurant",
-        cascade="all, delete-orphan",
-    )
-
-
-class MenuItem(Base):
-    __tablename__ = "menu_items"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    restaurant_id: Mapped[int] = mapped_column(ForeignKey("restaurants.id", ondelete="CASCADE"), index=True)
-    name: Mapped[str] = mapped_column(String(150))
-    price: Mapped[float] = mapped_column(Float)
-    
-    restaurant: Mapped[Restaurant] = relationship(back_populates="menu_items")
+    tags: Mapped[list[str]] = mapped_column(JSON, default=list)
+    official_link: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    menu_url: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    status: Mapped[str] = mapped_column(String(30), default="active", index=True)
 
 
 class User(Base):
@@ -44,11 +32,6 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(128))
     role: Mapped[str] = mapped_column(String(40), index=True)
 
-    tokens: Mapped[list["AuthToken"]] = relationship(
-        back_populates="user",
-        cascade="all, delete-orphan",
-    )
-
 
 class AuthToken(Base):
     __tablename__ = "auth_tokens"
@@ -58,4 +41,46 @@ class AuthToken(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    user: Mapped[User] = relationship(back_populates="tokens")
+
+class UserProfile(Base):
+    __tablename__ = "user_profiles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True)
+    dietary_preferences: Mapped[str] = mapped_column(String(300), default="")
+    allergies: Mapped[str] = mapped_column(String(300), default="")
+    budget_limit: Mapped[float | None] = mapped_column(Float, nullable=True)
+    notifications_enabled: Mapped[bool] = mapped_column(default=True)
+
+
+class Favorite(Base):
+    __tablename__ = "favorites"
+    __table_args__ = (UniqueConstraint("user_id", "restaurant_id", name="uq_user_restaurant_favorite"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    restaurant_id: Mapped[int] = mapped_column(ForeignKey("restaurants.id", ondelete="CASCADE"), index=True)
+    list_name: Mapped[str] = mapped_column(String(100), default="Favorite")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class RestaurantVisit(Base):
+    __tablename__ = "restaurant_visits"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    restaurant_id: Mapped[int] = mapped_column(ForeignKey("restaurants.id", ondelete="CASCADE"), index=True)
+    visited_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    accessed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    restaurant_id: Mapped[int | None] = mapped_column(ForeignKey("restaurants.id", ondelete="CASCADE"), nullable=True)
+    title: Mapped[str] = mapped_column(String(150))
+    message: Mapped[str] = mapped_column(Text)
+    is_read: Mapped[bool] = mapped_column(default=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)

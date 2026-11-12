@@ -1,8 +1,7 @@
-
 <script>
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { isAuthenticated, logout } from '$lib/auth';
+  import { authHeader, isAuthenticated, logout } from '$lib/auth';
   import { isAdminAuthenticated } from '$lib/adminAuth';
   import { getApiBaseUrl } from '$lib/api';
 
@@ -17,12 +16,72 @@
   let bugetMaxim = $state('');
   let specific = $state('');
   let cautare = $state('');
+  let filtruRapid = $state('all'); 
+
+  const filtreRapide = [
+    {
+      key: 'meniu_zilei',
+      label: 'Meniul Zilei',
+      icon: '🍲',
+      terms: ['meniul zilei', 'meniu-zilei', '__meniul_zilei__', 'catering']
+    },
+    {
+      key: 'burger',
+      label: 'Burger',
+      icon: '🍔',
+      terms: ['burger', 'fast food', 'fast-food', 'grill', 'gratar', 'american', 'bistro']
+    },
+    {
+      key: 'pizza',
+      label: 'Pizza',
+      icon: '🍕',
+      terms: ['pizza', 'pizzerie', 'italienesc', 'italian']
+    },
+    {
+      key: 'shaorma',
+      label: 'Shaorma',
+      icon: '🥙',
+      terms: ['shaorma', 'oriental', 'kebab', 'shaormerie']
+    },
+    {
+      key: 'cafea',
+      label: 'Cafea',
+      icon: '☕',
+      terms: ['cafea', 'coffee', 'cafenea', 'bar', 'cafe bar']
+    },
+    {
+      key: 'brunch',
+      label: 'Brunch',
+      icon: '🥪',
+      terms: ['brunch', 'mic dejun', 'bistro', 'omleta']
+    },
+    {
+      key: 'desert',
+      label: 'Desert',
+      icon: '🍰',
+      terms: ['desert', 'creperie', 'cofetarie', 'patiserie', 'clatite', 'gelaterie', 'inghetata']
+    }
+  ];
 
   const apiBaseUrl = () => getApiBaseUrl();
 
-  function buildMapsLink(numeRestaurant, locatieRestaurant) {
-    const interogare = encodeURIComponent(`${numeRestaurant} ${locatieRestaurant}`);
-    return `https://www.google.com/maps/search/?api=1&query=${interogare}`;
+  function normalizeText(text) {
+    return String(text ?? '')
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  }
+
+  function matchesAnyTerm(text, terms) {
+    const cleanText = normalizeText(text);
+    return terms.some((term) => cleanText.includes(normalizeText(term)));
+  }
+
+  function getDirectLink(nume, locatie) {
+    const interogare = encodeURIComponent(`${nume} ${locatie}`);
+    // Operatorul \ sau !ducky din DuckDuckGo te duce INSTANT pe prima optiune gasita
+    return `https://duckduckgo.com/?q=%5C${interogare}`;
   }
 
   function refreshAuthState() {
@@ -36,11 +95,25 @@
     goto('/login');
   }
 
+  async function deschideSursaOficiala(restaurant, url) {
+    if (isAuthenticated()) {
+      fetch(`${apiBaseUrl()}/restaurants/${restaurant.id}/access`, {
+        method: 'POST',
+        headers: authHeader()
+      }).catch((error) => console.error('Nu am putut inregistra accesarea restaurantului:', error));
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  function linkMeniuOficial(restaurant) {
+    return getDirectLink(restaurant.nume || restaurant.name, restaurant.locatie || restaurant.address || 'Baia Mare');
+  }
+
   function seteazaFiltruRapid(valoare) {
-    if (cautare === valoare) {
-      cautare = '';
+    if (filtruRapid === valoare) {
+      filtruRapid = 'all';
     } else {
-      cautare = valoare;
+      filtruRapid = valoare;
     }
     incarcaRestaurante();
   }
@@ -54,6 +127,7 @@
       goto('/login');
       return;
     }
+
     isLoading = true;
     error = '';
     statusMessage = '';
@@ -65,13 +139,6 @@
     const areBugetValid = !Number.isNaN(bugetVal) && bugetVal > 0;
     const specificVal = specific.trim();
     const cautareVal = cautare.trim();
-
-    if (!areBugetValid && !specificVal && !cautareVal) {
-      isLoading = false;
-      dateRestaurante = [];
-      statusMessage = 'Introdu un buget valid.';
-      return;
-    }
 
     if (areBugetValid) {
       parametri.set('max_budget', bugetVal.toString());
@@ -93,7 +160,26 @@
         throw new Error(`Eroare API: ${raspuns.status}`);
       }
       const data = await raspuns.json();
-      dateRestaurante = Array.isArray(data) ? data : [];
+      let lista = Array.isArray(data) ? data : [];
+
+      const filtruCurent = filtreRapide.find((filtru) => filtru.key === filtruRapid);
+      
+      if (filtruCurent) {
+        lista = lista.filter((restaurant) => {
+          const textDeCautat = [
+            restaurant?.specific,
+            restaurant?.nume,
+            restaurant?.name,
+            restaurant?.descriere,
+            restaurant?.description,
+          ].filter(Boolean).join(' ');
+
+          return matchesAnyTerm(textDeCautat, filtruCurent.terms);
+        });
+      }
+
+      dateRestaurante = lista;
+
       if (dateRestaurante.length === 0) {
         statusMessage = 'Nu am gasit restaurante pentru filtrele curente.';
       }
@@ -114,6 +200,7 @@
     <li><a href="#menu">Cautare</a></li>
     <li><a href="#contact">Contact</a></li>
     {#if isAuthed}
+      <li><a href="/account">Contul meu</a></li>
       <li><button class="link-btn" type="button" onclick={handleLogout}>Logout</button></li>
       {#if isAdminAuthed}
         <li><a href="/admin">Admin</a></li>
@@ -144,6 +231,7 @@
 <section id="menu" class="menu-section">
   <h2 class="section-title">Motor de Cautare Restaurante Baia Mare</h2>
   <p class="section-subtitle">Filtreaza rapid si vezi doar optiunile care se potrivesc.</p>
+  
   <div class="menu-filters">
     <input
       id="bugetMaxim"
@@ -157,57 +245,42 @@
       id="specific"
       type="text"
       bind:value={specific}
-      placeholder="Specific (ex: Romanesc)"
+      placeholder="Specific / categorie (ex: International, Fast-food)"
     />
     <input id="cautare" type="text" bind:value={cautare} placeholder="Cautare (nume, locatie)" />
     <button class="filter-btn" onclick={incarcaRestaurante}>Cauta</button>
 
     <div class="preparate-rapide">
-      <button 
-        type="button" 
-        class="tag-btn {cautare === 'burger' ? 'activ' : ''}" 
-        onclick={() => seteazaFiltruRapid('burger')}
+      <button
+        type="button"
+        class="tag-btn {filtruRapid === 'all' ? 'activ' : ''}"
+        onclick={() => seteazaFiltruRapid('all')}
       >
-        🍔 Burger
+        Toate
       </button>
 
-      <button 
-        type="button" 
-        class="tag-btn {cautare === 'pizza' ? 'activ' : ''}" 
-        onclick={() => seteazaFiltruRapid('pizza')}
-      >
-        🍕 Pizza
-      </button>
+      {#each filtreRapide as filtru}
+        <button
+          type="button"
+          class="tag-btn {filtruRapid === filtru.key ? 'activ' : ''}"
+          onclick={() => seteazaFiltruRapid(filtru.key)}
+        >
+          {filtru.icon} {filtru.label}
+        </button>
+      {/each}
 
-      <button 
-        type="button" 
-        class="tag-btn {cautare === 'shaorma' ? 'activ' : ''}" 
-        onclick={() => seteazaFiltruRapid('shaorma')}
-      >
-        🥙 Shaorma
-      </button>
-
-      <button 
-        type="button" 
-        class="tag-btn {cautare === 'paste' ? 'activ' : ''}" 
-        onclick={() => seteazaFiltruRapid('paste')}
-      >
-        🍝 Paste
-      </button>
-
-      <button 
-        type="button" 
-        class="tag-btn {cautare === 'cafea' ? 'activ' : ''}" 
-        onclick={() => seteazaFiltruRapid('cafea')}
-      >
-        ☕ Cafea / Brunch
-      </button>
-
-      {#if cautare || specific || bugetMaxim}
+      {#if cautare || specific || bugetMaxim || filtruRapid !== 'all'}
         <button 
           type="button" 
           class="reset-btn" 
-          onclick={() => { cautare = ''; specific = ''; bugetMaxim = ''; dateRestaurante = []; statusMessage = 'Filtrele au fost resetate.'; }}
+          onclick={() => { 
+            cautare = ''; 
+            specific = ''; 
+            bugetMaxim = ''; 
+            filtruRapid = 'all';
+            dateRestaurante = []; 
+            statusMessage = 'Filtrele au fost resetate.'; 
+          }}
         >
           ✖ Reseteaza
         </button>
@@ -221,31 +294,30 @@
     <p class="mesaj-gol mesaj-eroare">{error}</p>
   {:else}
     <div class="menu-container">
-      {#each dateRestaurante as r, i}
-        {@const linkRestaurant = (r.linkOficial && r.linkOficial.trim() !== '') 
-          ? r.linkOficial 
-          : (r.website_url && r.website_url.trim() !== '') 
-            ? r.website_url 
-            : (r.website && r.website.trim() !== '') 
-              ? r.website 
-              : buildMapsLink(r.nume || r.name, r.locatie || 'Baia Mare')}
-        <article class="menu-item" style={`--delay: ${i * 60}ms`}>
-          <img class="restaurant-img" src={r.imagine} alt={r.nume} />
-          <div class="item-info">
-            <h3>{r.nume}</h3>
-            <p>Specific: {r.specific}</p>
-            <p>Locatie: {r.locatie}</p>
-            <span class="price">Buget mediu: {r.buget} RON</span>
-            <div class="item-actions">
-              <a class="btn site-btn detalii-btn" href={`/restaurants/${r.slug}`}>Detalii</a>
-              <a class="btn site-btn" href={linkRestaurant} target="_blank" rel="noopener noreferrer">
-                Viziteaza
-              </a>
-            </div>
+    {#each dateRestaurante as r, i}
+      <article class="menu-item" style={`--delay: ${i * 60}ms`}>
+        <img class="restaurant-img" src={r.imagine} alt={r.nume || r.name} />
+        <div class="item-info">
+          <h3>{r.nume || r.name}</h3>
+          <p>Specific: {r.specific}</p>
+          <p>Locatie: {r.locatie || r.address || 'Baia Mare'}</p>
+          <span class="price">Buget mediu: {r.buget || r.buget_mediu} RON</span>
+          <div class="item-actions">
+            <a class="btn site-btn detalii-btn" href={`/restaurants/${r.slug}`}>Detalii</a>
+            {#if r.website_url || r.menu_url}
+              <button
+                class="btn site-btn"
+                type="button"
+                onclick={() => deschideSursaOficiala(r, r.menu_url ? linkMeniuOficial(r) : r.website_url)}
+              >
+                {r.menu_url ? 'Vezi meniul oficial' : 'Site oficial'}
+              </button>
+            {/if}
           </div>
-        </article>
-      {/each}
-    </div>
+        </div>
+      </article>
+    {/each}
+  </div>
     {#if dateRestaurante.length === 0}
       <p class="mesaj-gol">{statusMessage}</p>
     {/if}
@@ -488,32 +560,33 @@
     margin-bottom: 36px;
     padding: 18px;
     border-radius: 20px;
-    background: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(28, 27, 26, 0.08);
-    box-shadow: 0 12px 30px rgba(28, 27, 26, 0.08);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
   }
 
   .menu-filters input {
     padding: 12px 16px;
-    border: 1px solid transparent;
+    border: 1px solid var(--border);
     border-radius: 999px;
     min-width: 220px;
     outline: none;
-    background: #fff;
+    background: var(--surface-2);
+    color: var(--ink);
     font-family: inherit;
     transition: border 0.2s ease, box-shadow 0.2s ease;
   }
 
   .menu-filters input:focus {
-    border-color: rgba(255, 122, 61, 0.6);
-    box-shadow: 0 0 0 3px rgba(255, 122, 61, 0.2);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(255, 107, 61, 0.2);
   }
 
   .filter-btn {
     padding: 10px 22px;
     border: none;
     background: var(--accent-2);
-    color: #fff;
+    color: #121522;
     cursor: pointer;
     border-radius: 999px;
     transition: 0.3s;
@@ -521,7 +594,7 @@
   }
 
   .filter-btn:hover {
-    filter: brightness(1.05);
+    filter: brightness(1.1);
     transform: translateY(-1px);
   }
 
@@ -533,13 +606,13 @@
     gap: 10px;
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid rgba(28, 27, 26, 0.1);
+    border-top: 1px solid var(--border);
   }
 
   .tag-btn {
-    background: #fff;
-    border: 1px solid rgba(28, 27, 26, 0.12);
-    color: #1f1d1b;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--ink);
     padding: 8px 16px;
     border-radius: 999px;
     cursor: pointer;
@@ -549,21 +622,21 @@
   }
 
   .tag-btn:hover {
-    background: rgba(255, 107, 61, 0.1);
+    background: rgba(255, 107, 61, 0.15);
     border-color: var(--accent);
   }
 
   .tag-btn.activ {
-    background: var(--accent-2);
+    background: var(--accent);
     color: #fff;
-    border-color: var(--accent-2);
+    border-color: var(--accent);
     font-weight: 600;
   }
 
   .reset-btn {
     background: transparent;
     border: none;
-    color: #b91c1c;
+    color: #f87171;
     cursor: pointer;
     font-weight: 600;
     padding: 6px 12px;
@@ -578,12 +651,12 @@
 
   .menu-item {
     background: var(--surface);
-    border: 1px solid rgba(28, 27, 26, 0.08);
+    border: 1px solid var(--border);
     padding: 18px;
     border-radius: 18px;
     transition: transform 0.25s ease, box-shadow 0.25s ease;
     text-align: left;
-    box-shadow: 0 12px 24px rgba(15, 12, 10, 0.08);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
     animation: cardRise 0.6s ease forwards;
     opacity: 0;
     transform: translateY(18px);
@@ -616,20 +689,32 @@
   }
 
   .price {
-    color: var(--accent-2);
+    color: var(--accent-3);
     font-weight: 600;
     font-size: 1.05rem;
+    display: block;
+    margin-top: 6px;
   }
 
   .site-btn {
-    background: #1f1d1b;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
     margin-top: 12px;
     padding: 8px 16px;
-    color: #fff;
+    color: var(--ink);
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: 0.88rem;
+    transition: background 0.2s ease;
+  }
+
+  .detalii-btn {
+    margin-top: 12px;
   }
 
   .site-btn:hover {
-    background: #0f0e0d;
+    background: var(--accent);
+    color: #fff;
   }
 
   .mesaj-gol {
@@ -639,14 +724,15 @@
   }
 
   .mesaj-eroare {
-    color: #b91c1c;
+    color: #f87171;
   }
 
   footer {
-    background: #141210;
-    color: #f3efe9;
+    background: #090b0e;
+    color: var(--muted);
     text-align: center;
     padding: 24px 16px;
+    border-top: 1px solid var(--border);
   }
 
   @media (max-width: 700px) {
@@ -681,4 +767,3 @@
     }
   }
 </style>
-

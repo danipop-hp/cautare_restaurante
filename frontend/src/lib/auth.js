@@ -1,76 +1,66 @@
 import { browser } from '$app/environment';
+import { getApiBaseUrl } from '$lib/api';
 
-const AUTH_KEY = 'urbanplate-auth';
-const ADMIN_TOKEN_KEY = 'urbanplate-admin-token';
-const USERS_KEY = 'urbanplate-users';
+const AUTH_TOKEN_KEY = 'urbanplate-auth-token';
+const AUTH_USER_KEY = 'urbanplate-auth-user';
 
-function getUsers() {
-  if (!browser) {
-    return [];
-  }
-  const raw = localStorage.getItem(USERS_KEY);
-  if (!raw) {
-    return [];
-  }
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+function saveSession(data) {
+  if (!browser) return;
+  localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+  localStorage.setItem(AUTH_USER_KEY, JSON.stringify({ name: data.name, role: data.role }));
 }
 
-function saveUsers(users) {
-  if (!browser) {
-    return;
-  }
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+export function getAuthToken() {
+  return browser ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
+}
+
+export function authHeader() {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 export function isAuthenticated() {
-  if (!browser) {
-    return false;
-  }
-  if (localStorage.getItem(AUTH_KEY) === '1') {
-    return true;
-  }
-  return Boolean(localStorage.getItem(ADMIN_TOKEN_KEY));
+  return Boolean(getAuthToken());
 }
 
-export function login({ email, password }) {
-  if (!browser) {
-    return { ok: false, message: 'Login indisponibil in SSR.' };
+export async function login({ email, password }) {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await response.json();
+    if (!response.ok) return { ok: false, message: data.detail ?? 'Email sau parola gresita.' };
+    saveSession(data);
+    return { ok: true };
+  } catch (error) {
+    console.error('Login API failed:', error);
+    return { ok: false, message: 'Backend-ul nu este disponibil.' };
   }
-  const users = getUsers();
-  const match = users.find(
-    (user) => user.email.toLowerCase() === email.toLowerCase() && user.password === password
-  );
-  if (!match) {
-    return { ok: false, message: 'Email sau parola gresita.' };
-  }
-  localStorage.setItem(AUTH_KEY, '1');
-  return { ok: true };
 }
 
-export function register({ name, email, password }) {
-  if (!browser) {
-    return { ok: false, message: 'Register indisponibil in SSR.' };
+export async function register({ name, email, password }) {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password })
+    });
+    const data = await response.json();
+    if (!response.ok) return { ok: false, message: data.detail ?? 'Nu am putut crea contul.' };
+    saveSession(data);
+    return { ok: true };
+  } catch (error) {
+    console.error('Register API failed:', error);
+    return { ok: false, message: 'Backend-ul nu este disponibil.' };
   }
-  const users = getUsers();
-  const exists = users.some((user) => user.email.toLowerCase() === email.toLowerCase());
-  if (exists) {
-    return { ok: false, message: 'Exista deja un cont cu acest email.' };
-  }
-  const updated = [...users, { name, email, password }];
-  saveUsers(updated);
-  return { ok: true };
 }
 
 export function logout() {
-  if (!browser) {
-    return;
-  }
-  localStorage.removeItem(AUTH_KEY);
-  localStorage.removeItem(ADMIN_TOKEN_KEY);
+  if (!browser) return;
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(AUTH_USER_KEY);
+  localStorage.removeItem('urbanplate-admin-token');
   localStorage.removeItem('urbanplate-admin-email');
 }

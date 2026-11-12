@@ -14,7 +14,7 @@
     }
   });
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     error = '';
 
@@ -23,12 +23,17 @@
       return;
     }
 
-    const result = register({ name, email, password });
+    if (password.length < 8) {
+      error = 'Parola trebuie sa aiba cel putin 8 caractere.';
+      return;
+    }
+
+    const result = await register({ name, email, password });
     if (!result.ok) {
       error = result.message ?? 'Nu am putut crea contul.';
       return;
     }
-    goto('/login');
+    goto('/');
   }
 </script>
 
